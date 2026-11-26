@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Make an Offer | Luke van Wijk</title>
+<meta name="description" content="Luke van Wijk, Elders Real Estate Shailer Park">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --red:#D71920; --red-dark:#A8121A; --ink:#1E1E1E; --muted:#6B6B6B;
+    --line:#E3E3E3; --bg:#F6F5F3; --card:#FFFFFF; --ok:#1F7A4D; --err:#C0262D;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  header{background:var(--red);color:#fff}
+  .bar{max-width:640px;margin:0 auto;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .brand{font-weight:700;letter-spacing:.02em;font-size:15px}
+  .brand small{display:block;font-weight:500;opacity:.85;font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+  .bar a{color:#fff;text-decoration:none;font-weight:600;font-size:14px;white-space:nowrap}
+  main{max-width:640px;margin:0 auto;padding:28px 20px 60px}
+  h1{font-size:30px;line-height:1.15;margin:0 0 8px;letter-spacing:-.01em}
+  .intro{color:var(--muted);margin:0 0 24px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:24px 22px;box-shadow:0 1px 2px rgba(0,0,0,.03)}
+  .progress{display:flex;gap:6px;margin-bottom:18px}
+  .progress span{flex:1;height:4px;border-radius:2px;background:var(--line);transition:background .25s}
+  .progress span.on{background:var(--red)}
+  .stepno{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--red);margin:0 0 4px}
+  h2{font-size:21px;margin:0 0 18px}
+  .step{display:none}
+  .step.active{display:block;animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  .field{margin-bottom:18px}
+  label.lbl{display:block;font-weight:600;font-size:14px;margin-bottom:6px}
+  .opt{font-weight:400;color:var(--muted)}
+  .hint{font-size:13px;color:var(--muted);margin-top:5px}
+  input[type=text],input[type=email],input[type=tel],select,textarea{
+    width:100%;font:inherit;padding:12px 14px;border:1px solid #CFCFCF;border-radius:10px;background:#fff;color:var(--ink);appearance:none;-webkit-appearance:none}
+  select{background-image:linear-gradient(45deg,transparent 50%,#777 50%),linear-gradient(135deg,#777 50%,transparent 50%);background-position:calc(100% - 20px) 52%,calc(100% - 15px) 52%;background-size:5px 5px;background-repeat:no-repeat;padding-right:36px}
+  textarea{min-height:84px;resize:vertical}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 3px rgba(215,25,32,.14)}
+  .money{position:relative}
+  .money::before{content:"$";position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted);font-weight:600}
+  .money input{padding-left:28px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media (max-width:480px){.row{grid-template-columns:1fr}h1{font-size:26px}}
+  .pills{display:flex;flex-wrap:wrap;gap:8px}
+  .pills label{cursor:pointer}
+  .pills input{position:absolute;opacity:0;pointer-events:none}
+  .pills span{display:inline-block;padding:10px 16px;border:1px solid #CFCFCF;border-radius:999px;font-size:14px;font-weight:500;background:#fff;transition:all .15s}
+  .pills input:checked+span{background:var(--red);border-color:var(--red);color:#fff}
+  .pills input:focus-visible+span{box-shadow:0 0 0 3px rgba(215,25,32,.25)}
+  .check{display:flex;gap:10px;align-items:flex-start;cursor:pointer;font-size:15px}
+  .check input{width:20px;height:20px;margin:2px 0 0;accent-color:var(--red);flex:none}
+  .sub{border-top:1px solid var(--line);margin-top:6px;padding-top:18px}
+  .subhead{font-weight:700;font-size:15px;margin:0 0 12px}
+  .error{display:none;color:var(--err);font-size:13px;margin-top:6px;font-weight:500}
+  .invalid .error{display:block}
+  .invalid input,.invalid select,.invalid textarea{border-color:var(--err)}
+  .upload{display:block;border:1.5px dashed #C9C9C9;border-radius:12px;padding:18px;text-align:center;cursor:pointer;background:#FCFCFC;transition:border-color .15s}
+  .upload:hover{border-color:var(--red)}
+  .upload input{display:none}
+  .upload .ico{font-size:26px;display:block}
+  .upload .t{font-weight:600;font-size:14px}
+  .upload .s{font-size:13px;color:var(--muted)}
+  .upload img{max-width:100%;max-height:160px;border-radius:8px;display:none;margin:8px auto 0}
+  .upload.has img{display:block}
+  .skipnote{background:#FFF6F6;border:1px solid #F3D3D4;border-radius:10px;padding:12px 14px;font-size:14px;margin-bottom:18px}
+  .nav{display:flex;gap:10px;margin-top:24px}
+  button{font:inherit;font-weight:600;border-radius:10px;padding:13px 20px;cursor:pointer;border:1px solid transparent;transition:background .15s}
+  .btn-primary{background:var(--red);color:#fff;flex:1}
+  .btn-primary:hover{background:var(--red-dark)}
+  .btn-primary:disabled{opacity:.6;cursor:wait}
+  .btn-ghost{background:#fff;border-color:#CFCFCF;color:var(--ink)}
+  .review{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:18px}
+  .review dl{margin:0}
+  .review .grp{padding:14px 16px;border-bottom:1px solid var(--line)}
+  .review .grp:last-child{border-bottom:0}
+  .review .gh{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  .review .gh b{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  .review .gh a{font-size:13px;color:var(--red);font-weight:600;cursor:pointer;text-decoration:none}
+  .review .r{display:flex;justify-content:space-between;gap:16px;font-size:14px;padding:3px 0}
+  .review dt{color:var(--muted)}
+  .review dd{margin:0;text-align:right;font-weight:500;word-break:break-word}
+  .done{text-align:center;padding:20px 6px}
+  .done .tick{width:64px;height:64px;border-radius:50%;background:#E8F4EE;color:var(--ok);display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 14px}
+  .done a{color:var(--red);font-weight:600}
+  .agent{display:flex;gap:14px;align-items:center;margin-top:22px;padding:16px;background:#fff;border:1px solid var(--line);border-radius:14px}
+  .agent .av{width:48px;height:48px;border-radius:50%;background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;flex:none}
+  .agent b{display:block}
+  .agent a{color:var(--ink);text-decoration:none;font-size:14px}
+  details{margin-top:22px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:0 16px}
+  summary{cursor:pointer;font-weight:600;font-size:14px;padding:14px 0}
+  details p{font-size:13px;color:#4A4A4A;margin:0 0 12px}
+  details a{color:var(--red)}
+  footer{text-align:center;font-size:12px;color:var(--muted);padding:0 20px 30px}
+  .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="bar">
+    <div class="brand">Elders Shailer Park<small>Luke van Wijk</small></div>
+    <a id="hdrPhone" href="#">Call Luke</a>
+  </div>
+</header>
+
+<main>
+  <h1>Make an offer</h1>
+  <p class="intro">Takes about two minutes. Your offer comes straight to Luke, who'll call you to talk it through.</p>
+
+  <div class="card">
+    <iframe name="sink" id="sink" title="" style="display:none"></iframe>
+    <form id="offer" method="POST" enctype="multipart/form-data" target="sink" novalidate>
+      <!-- Hidden settings for the email service -->
+      <input type="hidden" name="_subject" id="f_subject" value="New offer">
+      <input type="hidden" name="_template" value="table">
+      <input type="hidden" name="_captcha" value="false">
+      <input type="hidden" name="_cc" id="f_cc" value="">
+      <input type="hidden" name="Summary" id="f_summary" value="">
+      <div class="hp" aria-hidden="true">
+        <label>Leave blank <input type="text" name="_honey" tabindex="-1" autocomplete="off"></label>
+      </div>
+
+      <div class="progress" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+
+      <!-- STEP 1 -->
+      <section class="step" data-step="1">
+        <p class="stepno">Step 1 of 5</p>
+        <h2>Which home, and how much?</h2>
+        <div class="field" data-req="select">
+          <label class="lbl" for="property">Property you're offering on</label>
+          <select id="property" name="Property"><option value="">Choose a property…</option></select>
+          <div class="error">Please choose the property.</div>
+        </div>
+        <div class="field" data-req="money">
+          <label class="lbl" for="amount">Offer amount</label>
+          <div class="money"><input id="amount" name="Offer amount" type="text" inputmode="numeric" autocomplete="off" placeholder="0"></div>
+          <div class="error">Please enter your offer amount.</div>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label class="lbl" for="dep1">Initial deposit <span class="opt">(optional)</span></label>
+            <div class="money"><input id="dep1" name="Initial deposit" type="text" inputmode="numeric" autocomplete="off" placeholder="0"></div>
+            <div class="hint">Paid when you sign the contract</div>
+          </div>
+          <div class="field">
+            <label class="lbl" for="dep2">Second deposit <span class="opt">(optional)</span></label>
+            <div class="money"><input id="dep2" name="Second deposit" type="text" inputmode="numeric" autocomplete="off" placeholder="0"></div>
+            <div class="hint">Paid when the contract goes unconditional</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- STEP 2 -->
+      <section class="step" data-step="2">
+        <p class="stepno">Step 2 of 5</p>
+        <h2>Who's buying?</h2>
+        <div class="field" data-req="text">
+          <label class="lbl" for="b1name">Buyer 1 – full legal name</label>
+          <input id="b1name" name="Buyer 1 name" type="text" autocomplete="name">
+          <div class="hint">Include middle names, as on your licence.</div>
+          <div class="error">Please enter the full legal name.</div>
+        </div>
+        <div class="row">
+          <div class="field" data-req="email">
+            <label class="lbl" for="b1email">Email</label>
+            <input id="b1email" name="Buyer 1 email" type="email" autocomplete="email">
+            <div class="error">Please enter a valid email.</div>
+          </div>
+          <div class="field" data-req="mobile">
+            <label class="lbl" for="b1mobile">Mobile</label>
+            <input id="b1mobile" name="Buyer 1 mobile" type="tel" autocomplete="tel" placeholder="04xx xxx xxx">
+            <div class="error">Please enter a valid mobile.</div>
+          </div>
+        </div>
+        <label class="check"><input type="checkbox" id="joint"> I'm buying with someone else</label>
+        <div id="buyer2" class="sub" hidden>
+          <p class="subhead">Buyer 2</p>
+          <div class="field" data-req="text">
+            <label class="lbl" for="b2name">Full legal name</label>
+            <input id="b2name" name="Buyer 2 name" type="text" disabled>
+            <div class="error">Please enter the full legal name.</div>
+          </div>
+          <div class="row">
+            <div class="field" data-req="email">
+              <label class="lbl" for="b2email">Email</label>
+              <input id="b2email" name="Buyer 2 email" type="email" disabled>
+              <div class="error">Please enter a valid email.</div>
+            </div>
+            <div class="field" data-req="mobile">
+              <label class="lbl" for="b2mobile">Mobile</label>
+              <input id="b2mobile" name="Buyer 2 mobile" type="tel" placeholder="04xx xxx xxx" disabled>
+              <div class="error">Please enter a valid mobile.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- STEP 3 -->
+      <section class="step" data-step="3">
+        <p class="stepno">Step 3 of 5</p>
+        <h2>Your conditions</h2>
+        <div class="field" data-req="radio">
+          <label class="lbl">Finance clause</label>
+          <div class="pills">
+            <label><input type="radio" name="Finance" value="None"><span>None</span></label>
+            <label><input type="radio" name="Finance" value="7 days"><span>7 days</span></label>
+            <label><input type="radio" name="Finance" value="14 days"><span>14 days</span></label>
+            <label><input type="radio" name="Finance" value="21 days"><span>21 days</span></label>
+          </div>
+          <div class="error">Please choose an option.</div>
+        </div>
+        <div class="field" data-req="radio">
+          <label class="lbl">Building &amp; pest clause</label>
+          <div class="pills">
+            <label><input type="radio" name="Building and pest" value="None"><span>None</span></label>
+            <label><input type="radio" name="Building and pest" value="7 days"><span>7 days</span></label>
+            <label><input type="radio" name="Building and pest" value="14 days"><span>14 days</span></label>
+          </div>
+          <div class="error">Please choose an option.</div>
+        </div>
+        <div class="field" data-req="radio">
+          <label class="lbl">Settlement</label>
+          <div class="pills">
+            <label><input type="radio" name="Settlement" value="30 days"><span>30 days</span></label>
+            <label><input type="radio" name="Settlement" value="45 days"><span>45 days</span></label>
+            <label><input type="radio" name="Settlement" value="60 days"><span>60 days</span></label>
+            <label><input type="radio" name="Settlement" value="Custom"><span>Custom</span></label>
+          </div>
+          <div class="error">Please choose an option.</div>
+        </div>
+        <div class="field" id="customWrap" data-req="text" hidden>
+          <label class="lbl" for="customSettle">Your preferred settlement</label>
+          <input id="customSettle" name="Custom settlement" type="text" placeholder="e.g. 90 days, or a specific date" disabled>
+          <div class="error">Please tell us your preferred settlement.</div>
+        </div>
+        <div class="field">
+          <label class="lbl" for="other">Any other conditions <span class="opt">(optional)</span></label>
+          <textarea id="other" name="Other conditions" placeholder="e.g. subject to sale of my home"></textarea>
+        </div>
+      </section>
+
+      <!-- STEP 4 -->
+      <section class="step" data-step="4">
+        <p class="stepno">Step 4 of 5</p>
+        <h2>Solicitor &amp; ID</h2>
+        <div class="skipnote">This step is optional. Skip it if you don't have the details handy, and you can text them to Luke later.</div>
+        <p class="subhead">Solicitor / conveyancer</p>
+        <div class="row">
+          <div class="field"><label class="lbl" for="solName">Name</label><input id="solName" name="Solicitor name" type="text"></div>
+          <div class="field"><label class="lbl" for="solFirm">Firm</label><input id="solFirm" name="Solicitor firm" type="text"></div>
+        </div>
+        <div class="row">
+          <div class="field" data-req="email-opt">
+            <label class="lbl" for="solEmail">Email</label><input id="solEmail" name="Solicitor email" type="email">
+            <div class="error">Please check this email.</div>
+          </div>
+          <div class="field"><label class="lbl" for="solPhone">Phone</label><input id="solPhone" name="Solicitor phone" type="tel"></div>
+        </div>
+        <div class="sub">
+          <p class="subhead">Driver's licence photos</p>
+          <div class="row">
+            <label class="upload" id="up1">
+              <input type="file" name="attachment" id="lic1" accept="image/*">
+              <span class="ico">🪪</span>
+              <span class="t">Buyer 1 licence</span><br>
+              <span class="s">Tap to take a photo or choose one</span>
+              <img alt="">
+            </label>
+            <label class="upload" id="up2" hidden>
+              <input type="file" name="attachment" id="lic2" accept="image/*" disabled>
+              <span class="ico">🪪</span>
+              <span class="t">Buyer 2 licence</span><br>
+              <span class="s">Tap to take a photo or choose one</span>
+              <img alt="">
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <!-- STEP 5 -->
+      <section class="step" data-step="5">
+        <p class="stepno">Step 5 of 5</p>
+        <h2>Check your offer</h2>
+        <div class="review" id="review"></div>
+        <div class="field" data-req="check">
+          <label class="check"><input type="checkbox" id="confirm" name="Buyer confirmed" value="Yes – understands this is a non-binding offer">
+            I understand this is an offer only and isn't binding until a contract is signed by both buyer and seller.</label>
+          <div class="error">Please tick to confirm.</div>
+        </div>
+      </section>
+
+      <div class="nav" id="nav">
+        <button type="button" class="btn-ghost" id="back">Back</button>
+        <button type="button" class="btn-primary" id="next">Next</button>
+      </div>
+      <div class="error" id="sendErr" style="margin-top:12px"></div>
+    </form>
+
+    <div class="done" id="done" hidden>
+      <div class="tick">✓</div>
+      <h2>Offer received</h2>
+      <p>Luke will be in touch shortly. If it's urgent, call <a class="phoneLink" href="#"></a>.</p>
+      <p><a id="homeLink" href="#">Back to home</a></p>
+    </div>
+  </div>
+
+  <div class="agent">
+    <div class="av">LvW</div>
+    <div>
+      <b>Luke van Wijk</b>
+      <a class="phoneLink" href="#"></a><br>
+      <a id="emailLink" href="#"></a>
+    </div>
+  </div>
+
+  <details>
+    <summary>Important notice</summary>
+    <p>Submitting this form doesn't create a contract, and it doesn't commit you or the seller to anything. A sale is only binding once both parties have signed a contract of sale.</p>
+    <p>Before you sign, you should get the Seller Disclosure Statement for the property. For residential contracts in Queensland (other than auction sales), buyers usually have a cooling-off period of 5 business days. If you end the contract during that period, a termination penalty of 0.25% of the purchase price applies.</p>
+    <p>Elders Real Estate Shailer Park acts for the seller. We'll present your offer to the seller, but we can't guarantee it will be accepted. We recommend you get your own legal and financial advice before signing anything.</p>
+  </details>
+  <details>
+    <summary>Privacy</summary>
+    <p>We collect the details you enter here, including any ID you upload, so we can present your offer and prepare a contract if it's accepted. We may share them with the seller, solicitors or conveyancers, and the service providers that help us run this form, some of which store data overseas, including in the United States. Read our <a href="https://www.eldersrealestate.com.au/privacy-policy/" target="_blank" rel="noopener">Privacy Policy</a>.</p>
+  </details>
+</main>
+
+<footer>Elders Real Estate Shailer Park · 4/54 Bryants Road, Shailer Park QLD 4128 · (07) 3440 8500</footer>
+
+<script>
+/* =================================================================
+   SETTINGS: edit these
+   ================================================================= */
+const CONFIG = {
+  // Where offers are emailed. The first offer sends an activation email
+  // from FormSubmit to this address. Click "Activate" once, and it's live.
+  sendTo:   "luke.vanwijk@eldersrealestate.com.au",
+  cc:       "",                    // e.g. Bre's email, to copy her in on every offer
+  phone:    "0438 015 656",
+  email:    "luke.vanwijk@eldersrealestate.com.au",
+  homeUrl:  "https://lukevw.com.au/",
+
+  // Your current listings. Add or remove lines as listings come and go.
+  // Optional: link straight to one property with ?property=1-holder-street
+  // (lower-case address, spaces as dashes). It'll be preselected.
+  // Luke van Wijk's listings from shailerpark.eldersrealestate.com.au/residential/sale/
+  // and his team page shailerpark.eldersrealestate.com.au/team/luke-van-wijk
+  // LISTINGS-START (auto-updated, keep this marker)
+  listingsUpdated: "2026-11-26",
+  listings: [
+    "4 Golfgreen Terrace, Meadowbrook",
+    "1 Holder Street, Loganholme",
+    "9 Corndale Street, Loganholme",
+    "12 Lagrange Court, Shailer Park",
+    "37 Constellation Drive, Loganholme",
+    "3 Country Meadows Circuit, Loganholme",
+    "26 Hampton Street, Loganholme",
+    "14 Kallista Road, Rochedale South",
+    "39/26-42 Goldmine Road, Ormeau",
+    "13/18 Daisy Hill Road, Daisy Hill",
+    "18 Starshine Street, Meadowbrook",
+    "10/41-43 Solomon Avenue, Loganholme",
+    "18/24 Gleneagles Avenue, Cornubia",
+    "27B Rising Street, Shailer Park",
+    "6 Meike Crescent, Tanah Merah",
+    "4 Camber Court, Shailer Park",
+    "5/410 Springwood Road, Springwood",
+    "7/133 Chatswood Road, Daisy Hill",
+  ],
+  // LISTINGS-END
+};
+/* ================================================================= */
+
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const form = $("#offer");
+form.action = "https://formsubmit.co/" + encodeURIComponent(CONFIG.sendTo);
+$("#f_cc").value = CONFIG.cc;
+if (!CONFIG.cc) $("#f_cc").disabled = true;
+
+// contact details
+const tel = "tel:" + CONFIG.phone.replace(/\s/g, "");
+$$(".phoneLink").forEach(a => { a.href = tel; a.textContent = CONFIG.phone; });
+$("#hdrPhone").href = tel;
+$("#emailLink").href = "mailto:" + CONFIG.email; $("#emailLink").textContent = CONFIG.email;
+$("#homeLink").href = CONFIG.homeUrl;
+
+// listings
+const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+const sel = $("#property");
+// dropdown sorted A–Z by street name
+const street = s => s.replace(/^(Lot\s+)?[\d\/\-]+[A-Z]?\s+/i, "");
+CONFIG.listings.slice().sort((a, b) => street(a).localeCompare(street(b))).forEach(l => {
+  const o = document.createElement("option"); o.value = l; o.textContent = l; sel.appendChild(o);
+});
+const pre = new URLSearchParams(location.search).get("property");
+if (pre) { const m = CONFIG.listings.find(l => slug(l).startsWith(slug(pre))); if (m) sel.value = m; }
+
+// money formatting
+const digits = v => v.replace(/[^\d]/g, "");
+const fmt = v => v ? Number(v).toLocaleString("en-AU") : "";
+["#amount", "#dep1", "#dep2"].forEach(id => {
+  const el = $(id);
+  el.addEventListener("input", () => { el.value = fmt(digits(el.value)); });
+});
+
+// joint buyer
+$("#joint").addEventListener("change", e => {
+  const on = e.target.checked;
+  $("#buyer2").hidden = !on;
+  $$("#buyer2 input").forEach(i => i.disabled = !on);
+  $("#up2").hidden = !on; $("#lic2").disabled = !on;
+});
+
+// custom settlement
+$$('input[name="Settlement"]').forEach(r => r.addEventListener("change", () => {
+  const c = $('input[name="Settlement"]:checked').value === "Custom";
+  $("#customWrap").hidden = !c; $("#customSettle").disabled = !c;
+}));
+
+// licence photos: preview + shrink large phone photos so the email goes through
+async function shrink(file) {
+  if (!file.type.startsWith("image/") || file.size < 900000) return file;
+  try {
+    const bmp = await createImageBitmap(file);
+    const k = Math.min(1, 1800 / Math.max(bmp.width, bmp.height));
+    const c = document.createElement("canvas");
+    c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+    c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
+    const blob = await new Promise(r => c.toBlob(r, "image/jpeg", 0.82));
+    return blob ? new File([blob], file.name.replace(/\.\w+$/, "") + ".jpg", { type: "image/jpeg" }) : file;
+  } catch { return file; }
+}
+[["#lic1", "#up1", "Buyer1"], ["#lic2", "#up2", "Buyer2"]].forEach(([inp, box, tag]) => {
+  const input = $(inp), wrap = $(box);
+  input.addEventListener("change", async () => {
+    const f = input.files[0]; if (!f) return;
+    let out = await shrink(f);
+    out = new File([out], tag + "-licence-" + out.name, { type: out.type });
+    try { const dt = new DataTransfer(); dt.items.add(out); input.files = dt.files; } catch {}
+    const img = wrap.querySelector("img");
+    img.src = URL.createObjectURL(out); wrap.classList.add("has");
+    wrap.querySelector(".s").textContent = "Tap to change photo";
+  });
+});
+
+// validation
+const okEmail = v => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim());
+const okMobile = v => /^(\+?61|0)4\d{8}$/.test(v.replace(/[\s()-]/g, "")) || v.replace(/\D/g, "").length >= 9;
+function validField(f) {
+  const t = f.dataset.req, el = f.querySelector("input,select,textarea");
+  if (!t || f.hidden || (el && el.disabled)) return true;
+  switch (t) {
+    case "select": return !!el.value;
+    case "money":  return Number(digits(el.value)) > 0;
+    case "text":   return el.value.trim().length > 1;
+    case "email":  return okEmail(el.value);
+    case "email-opt": return !el.value.trim() || okEmail(el.value);
+    case "mobile": return okMobile(el.value);
+    case "radio":  return !!f.querySelector("input:checked");
+    case "check":  return el.checked;
+  }
+  return true;
+}
+function validateStep(n) {
+  let first = null;
+  $$(`.step[data-step="${n}"] .field`).forEach(f => {
+    const ok = validField(f);
+    f.classList.toggle("invalid", !ok);
+    if (!ok && !first) first = f;
+  });
+  if (first) { first.scrollIntoView({ behavior: "smooth", block: "center" }); const i = first.querySelector("input,select,textarea"); i && i.focus({ preventScroll: true }); }
+  return !first;
+}
+$$(".field").forEach(f => f.addEventListener("input", () => { if (f.classList.contains("invalid") && validField(f)) f.classList.remove("invalid"); }));
+$$(".field").forEach(f => f.addEventListener("change", () => { if (f.classList.contains("invalid") && validField(f)) f.classList.remove("invalid"); }));
+
+// review
+const v = id => ($(id).value || "").trim();
+const radio = n => (document.querySelector(`input[name="${n}"]:checked`) || {}).value || "";
+const money = id => v(id) ? "$" + v(id) : "—";
+function buildReview() {
+  const settle = radio("Settlement") === "Custom" ? v("#customSettle") : radio("Settlement");
+  const groups = [
+    [1, "Offer", [["Property", v("#property")], ["Offer", money("#amount")], ["Initial deposit", money("#dep1")], ["Second deposit", money("#dep2")]]],
+    [2, "Buyers", [["Buyer 1", v("#b1name")], ["Email", v("#b1email")], ["Mobile", v("#b1mobile")]]
+      .concat($("#joint").checked ? [["Buyer 2", v("#b2name")], ["Email", v("#b2email")], ["Mobile", v("#b2mobile")]] : [])],
+    [3, "Conditions", [["Finance", radio("Finance")], ["Building & pest", radio("Building and pest")], ["Settlement", settle], ["Other", v("#other") || "—"]]],
+    [4, "Solicitor & ID", [["Solicitor", [v("#solName"), v("#solFirm")].filter(Boolean).join(", ") || "To follow"],
+      ["Licence photos", [$("#lic1").files.length, $("#joint").checked ? $("#lic2").files.length : 0].reduce((a, b) => a + b) + " attached"]]],
+  ];
+  const box = $("#review"); box.innerHTML = "";
+  groups.forEach(([step, title, rows]) => {
+    const g = document.createElement("div"); g.className = "grp";
+    const h = document.createElement("div"); h.className = "gh";
+    const b = document.createElement("b"); b.textContent = title;
+    const a = document.createElement("a"); a.textContent = "Edit"; a.onclick = () => go(step);
+    h.append(b, a); g.append(h);
+    const dl = document.createElement("dl");
+    rows.forEach(([k, val]) => {
+      const r = document.createElement("div"); r.className = "r";
+      const dt = document.createElement("dt"); dt.textContent = k;
+      const dd = document.createElement("dd"); dd.textContent = val || "—";
+      r.append(dt, dd); dl.append(r);
+    });
+    g.append(dl); box.append(g);
+  });
+  $("#f_subject").value = `Offer: ${v("#property")} – $${v("#amount")} – ${v("#b1name")}`;
+  $("#f_summary").value = `$${v("#amount")} on ${v("#property")} | Finance ${radio("Finance")} | B&P ${radio("Building and pest")} | Settlement ${settle}`;
+}
+
+// steps
+let step = 1;
+function go(n) {
+  step = n;
+  $$(".step").forEach(s => s.classList.toggle("active", +s.dataset.step === n));
+  $$(".progress span").forEach((s, i) => s.classList.toggle("on", i < n));
+  $("#back").style.display = n === 1 ? "none" : "";
+  $("#next").textContent = n === 5 ? "Send offer" : (n === 4 ? "Next (or skip)" : "Next");
+  if (n === 5) buildReview();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+$("#back").onclick = () => go(Math.max(1, step - 1));
+let sending = false;
+$("#next").onclick = () => {
+  if (!validateStep(step)) return;
+  if (step < 5) return go(step + 1);
+  // submit
+  sending = true;
+  $("#next").disabled = true; $("#next").textContent = "Sending…";
+  $("#sendErr").style.display = "none";
+  form.submit();
+  clearTimeout(window._t);
+  window._t = setTimeout(() => { if (sending) fail(); }, 45000);
+};
+$("#sink").addEventListener("load", () => {
+  if (!sending) return;
+  sending = false; clearTimeout(window._t);
+  form.hidden = true; $("#done").hidden = false;
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
+function fail() {
+  sending = false;
+  $("#next").disabled = false; $("#next").textContent = "Send offer";
+  const e = $("#sendErr"); e.style.display = "block";
+  e.textContent = "That didn't go through. Please check your connection and try again, or call Luke on " + CONFIG.phone + ".";
+}
+go(1);
+</script>
+</body>
+</html>
