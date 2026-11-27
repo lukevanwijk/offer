@@ -344,6 +344,10 @@ const CONFIG = {
   email:    "luke.vanwijk@eldersrealestate.com.au",
   homeUrl:  "https://lukevw.com.au/",
 
+  // Google Apps Script web app that emails offers in the branded format.
+  // Leave blank to fall back to FormSubmit's plain table email.
+  scriptUrl: "",
+
   // Your current listings. Add or remove lines as listings come and go.
   // Optional: link straight to one property with ?property=1-holder-street
   // (lower-case address, spaces as dashes). It'll be preselected.
@@ -352,8 +356,8 @@ const CONFIG = {
   // LISTINGS-START (auto-updated, keep this marker)
   listingsUpdated: "2026-11-26",
   listings: [
-    "4 Golfgreen Terrace, Meadowbrook",
-    "1 Holder Street, Loganholme",
+    "4 Golfgreen Terrace, Meadowbrook | https://shailerpark.eldersrealestate.com.au/residential/sale/4-golfgreen-terrace-meadowbrook-qld-4131-37P6662/",
+    "1 Holder Street, Loganholme | https://shailerpark.eldersrealestate.com.au/residential/sale/1-holder-street-loganholme-qld-4129-37P6630/",
     "9 Corndale Street, Loganholme",
     "12 Lagrange Court, Shailer Park",
     "37 Constellation Drive, Loganholme",
@@ -394,11 +398,13 @@ const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, 
 const sel = $("#property");
 // dropdown sorted A–Z by street name
 const street = s => s.replace(/^(Lot\s+)?[\d\/\-]+[A-Z]?\s+/i, "");
-CONFIG.listings.slice().sort((a, b) => street(a).localeCompare(street(b))).forEach(l => {
-  const o = document.createElement("option"); o.value = l; o.textContent = l; sel.appendChild(o);
+const LISTINGS = CONFIG.listings.map(l => { const [a, u] = l.split("|").map(x => x.trim()); return { a, u: u || "" }; });
+const urlFor = a => (LISTINGS.find(l => l.a === a) || {}).u || "";
+LISTINGS.slice().sort((x, y) => street(x.a).localeCompare(street(y.a))).forEach(l => {
+  const o = document.createElement("option"); o.value = l.a; o.textContent = l.a; sel.appendChild(o);
 });
 const pre = new URLSearchParams(location.search).get("property");
-if (pre) { const m = CONFIG.listings.find(l => slug(l).startsWith(slug(pre))); if (m) sel.value = m; }
+if (pre) { const m = LISTINGS.find(l => slug(l.a).startsWith(slug(pre))); if (m) sel.value = m.a; }
 
 // money formatting
 const digits = v => v.replace(/[^\d]/g, "");
@@ -533,15 +539,48 @@ $("#next").onclick = () => {
   sending = true;
   $("#next").disabled = true; $("#next").textContent = "Sending…";
   $("#sendErr").style.display = "none";
+  if (CONFIG.scriptUrl) sendViaScript().catch(err => { console.warn(err); sendViaFormSubmit(); });
+  else sendViaFormSubmit();
+};
+function sendViaFormSubmit() {
   form.submit();
   clearTimeout(window._t);
   window._t = setTimeout(() => { if (sending) fail(); }, 45000);
-};
-$("#sink").addEventListener("load", () => {
-  if (!sending) return;
+}
+const toB64 = f => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(",")[1]); r.onerror = rej; r.readAsDataURL(f); });
+async function sendViaScript() {
+  const joint = $("#joint").checked;
+  const settle = radio("Settlement") === "Custom" ? v("#customSettle") : radio("Settlement");
+  const licences = [];
+  for (const [id, who, on] of [["#lic1", "Buyer 1", true], ["#lic2", "Buyer 2", joint]]) {
+    const f = on && $(id).files[0];
+    if (f) licences.push({ who, name: f.name, mime: f.type || "image/jpeg", data: await toB64(f) });
+  }
+  const data = {
+    _honey: (form.querySelector('[name="_honey"]') || {}).value || "",
+    property: v("#property"), listingUrl: urlFor(v("#property")),
+    amount: v("#amount"), dep1: v("#dep1"), dep2: v("#dep2"),
+    b1name: v("#b1name"), b1email: v("#b1email"), b1mobile: v("#b1mobile"),
+    joint, b2name: joint ? v("#b2name") : "", b2email: joint ? v("#b2email") : "", b2mobile: joint ? v("#b2mobile") : "",
+    finance: radio("Finance"), bp: radio("Building and pest"), settlement: settle, other: v("#other"),
+    solName: v("#solName"), solFirm: v("#solFirm"), solEmail: v("#solEmail"), solPhone: v("#solPhone"),
+    licences,
+  };
+  const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 40000);
+  const res = await fetch(CONFIG.scriptUrl, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(data), signal: ctl.signal });
+  clearTimeout(t);
+  const out = await res.json();
+  if (!out.ok) throw new Error(out.error || "script error");
+  showDone();
+}
+function showDone() {
   sending = false; clearTimeout(window._t);
   form.hidden = true; $("#done").hidden = false;
   window.scrollTo({ top: 0, behavior: "smooth" });
+}
+$("#sink").addEventListener("load", () => {
+  if (!sending) return;
+  showDone();
 });
 function fail() {
   sending = false;
