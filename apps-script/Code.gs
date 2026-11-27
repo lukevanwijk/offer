@@ -2,8 +2,11 @@
  * Luke van Wijk — Make an Offer email sender (Google Apps Script)
  *
  * Receives offers from https://lukevanwijk.github.io/offer/ and emails them
- * to you from your own Gmail as a branded summary, with a PDF copy and the
- * buyers' licence photos attached. Reply-To is set to the buyer.
+ * to you from your own Gmail as a branded summary. Reply-To is set to the buyer.
+ * Attachments:
+ *   1. Offer - <street> - $<amount>.pdf          full offer (your copy)
+ *   2. Buyer ID - <street>.pdf                   licence photos, kept separate
+ *   3. Offer for seller - <street> - $<amount>.pdf  no buyer contact details
  *
  * Setup: see apps-script/SETUP.md in the repo (about 5 minutes, once).
  */
@@ -40,19 +43,23 @@ function sendOffer_(d) {
   const photo = d.listingUrl ? listingPhoto_(d.listingUrl) : '';
   const received = Utilities.formatDate(new Date(), 'Australia/Brisbane', "EEE d MMM yyyy, h:mm a");
 
-  const html = renderHtml_(d, street, suburb, photo, received);
+  const html = renderHtml_(d, street, suburb, photo, received, 'agent');
   const subject = `New offer $${d.amount} – ${street} – ${d.b1name}`;
+  const licences = (d.licences || []).filter(l => l && l.data);
 
   const attachments = [];
-  try {
-    const pdf = Utilities.newBlob(renderHtml_(d, street, suburb, '', received), 'text/html', 'offer.html')
-      .getAs('application/pdf').setName(`Offer - ${street} - $${d.amount}.pdf`);
-    attachments.push(pdf);
-  } catch (err) { console.warn('PDF failed', err); }
-  (d.licences || []).forEach(l => {
-    if (!l || !l.data) return;
-    attachments.push(Utilities.newBlob(Utilities.base64Decode(l.data), l.mime || 'image/jpeg', l.name || 'licence.jpg'));
-  });
+  // 1. Full offer
+  const offerPdf = toPdf_(renderHtml_(d, street, suburb, '', received, 'agent'), `Offer - ${street} - $${d.amount}.pdf`);
+  if (offerPdf) attachments.push(offerPdf);
+  // 2. Buyer ID, as its own document
+  if (licences.length) {
+    const idPdf = toPdf_(renderIdHtml_(d, street, suburb, licences), `Buyer ID - ${street}.pdf`);
+    if (idPdf) attachments.push(idPdf);
+    else licences.forEach(l => attachments.push(Utilities.newBlob(Utilities.base64Decode(l.data), l.mime || 'image/jpeg', l.name || 'licence.jpg')));
+  }
+  // 3. Seller copy, without buyer contact details
+  const sellerPdf = toPdf_(renderHtml_(d, street, suburb, '', received, 'seller'), `Offer for seller - ${street} - $${d.amount}.pdf`);
+  if (sellerPdf) attachments.push(sellerPdf);
 
   const opts = { htmlBody: html, name: SETTINGS.fromName, replyTo: d.b1email, attachments };
   if (SETTINGS.cc) opts.cc = SETTINGS.cc;
@@ -61,7 +68,8 @@ function sendOffer_(d) {
 
 /* ---------- rendering ---------- */
 
-function renderHtml_(d, street, suburb, photo, received) {
+function renderHtml_(d, street, suburb, photo, received, mode) {
+  const seller = mode === 'seller';
   const font = 'Helvetica,Arial,sans-serif', serif = "Georgia,'Times New Roman',serif";
   const label = t => `<div style="font:700 11px ${font};letter-spacing:2px;text-transform:uppercase;color:${C.red};margin-bottom:4px">${t}</div>`;
   const row = (k, v) => `<tr><td style="padding:10px 0;border-bottom:1px solid ${C.line};color:${C.muted};font:600 13px ${font};width:38%;vertical-align:top">${k}</td><td style="padding:10px 0;border-bottom:1px solid ${C.line};color:${C.ink};font:700 14px ${font};text-align:right">${v}</td></tr>`;
@@ -73,14 +81,17 @@ function renderHtml_(d, street, suburb, photo, received) {
     d.dep2 ? `Second deposit $${esc_(d.dep2)} <span style="color:${C.muted};font-weight:500">when unconditional</span>` : '',
   ].filter(Boolean).map(t => `<div style="font:600 13px ${font};color:${C.ink};margin-top:4px">${t}</div>`).join('');
 
-  let buyers = row('Buyer 1', esc_(d.b1name)) + row('Contact', lines([d.b1email, d.b1mobile]));
-  if (d.joint) buyers += row('Buyer 2', esc_(d.b2name)) + row('Contact', lines([d.b2email, d.b2mobile]));
+  let buyers = row('Buyer 1', esc_(d.b1name)) + (seller ? '' : row('Contact', lines([d.b1email, d.b1mobile])));
+  if (d.joint) buyers += row('Buyer 2', esc_(d.b2name)) + (seller ? '' : row('Contact', lines([d.b2email, d.b2mobile])));
 
   const terms = row('Finance', clause_(d.finance)) + row('Building &amp; pest', clause_(d.bp)) +
     row('Settlement', esc_(d.settlement || '—')) + row('Special conditions', esc_(d.other || 'None'));
 
-  const sol = lines([d.solName, d.solFirm, d.solEmail, d.solPhone]) || 'To follow';
+  const sol = (seller ? lines([d.solName, d.solFirm]) : lines([d.solName, d.solFirm, d.solEmail, d.solPhone])) || 'To follow';
   const lic = (d.licences || []).filter(l => l && l.data).map(l => esc_(l.who) + ' ✓').join('<br>') || 'To follow';
+  const solSection = seller
+    ? `<div style="margin-top:22px">${label('Buyer’s solicitor')}${table(row('Solicitor / conveyancer', sol))}</div>`
+    : `<div style="margin-top:22px">${label('Solicitor &amp; ID')}${table(row('Solicitor / conveyancer', sol) + row('Driver licence', lic))}</div>`;
 
   return `<div style="max-width:620px;margin:0 auto">
   <div style="padding:4px 4px 16px">
@@ -90,7 +101,7 @@ function renderHtml_(d, street, suburb, photo, received) {
   <div style="background:#fff;border:1px solid ${C.line};border-radius:16px">
     ${photo ? `<img src="${esc_(photo)}" width="100%" style="display:block;width:100%;height:auto;border-radius:14px 14px 0 0" alt="">` : ''}
     <div style="padding:24px 26px 26px">
-      ${label('New offer received')}
+      ${label(seller ? 'Offer received on your property' : 'New offer received')}
       <div style="font:500 28px ${serif};color:${C.ink};margin:8px 0 2px">${esc_(street)}</div>
       <div style="font:500 14px ${font};color:${C.muted}">${esc_(suburb)}</div>
       <div style="margin-top:18px;padding:16px 18px;background:${C.cream};border-radius:12px">
@@ -100,7 +111,7 @@ function renderHtml_(d, street, suburb, photo, received) {
       </div>
       <div style="margin-top:22px">${label('Buyers')}${table(buyers)}</div>
       <div style="margin-top:22px">${label('Terms')}${table(terms)}</div>
-      <div style="margin-top:22px">${label('Solicitor &amp; ID')}${table(row('Solicitor / conveyancer', sol) + row('Driver licence', lic))}</div>
+      ${solSection}
       <div style="margin-top:22px;font:500 12px ${font};color:${C.muted};line-height:1.5">Received ${esc_(received)}. This is an offer only and is not binding until a contract is signed by both buyer and seller.</div>
     </div>
   </div>
@@ -120,6 +131,32 @@ function plainText_(d, street, suburb, received) {
     `Received ${received}. This is an offer only and is not binding until a contract is signed by both buyer and seller.`,
   ];
   return L.filter(x => x !== false && x !== undefined && x !== null).join('\n');
+}
+
+function renderIdHtml_(d, street, suburb, licences) {
+  const font = 'Helvetica,Arial,sans-serif', serif = "Georgia,'Times New Roman',serif";
+  const names = { 'Buyer 1': d.b1name, 'Buyer 2': d.b2name };
+  const imgs = licences.map(l => `
+    <div style="margin-top:22px;page-break-inside:avoid">
+      <div style="font:700 11px ${font};letter-spacing:2px;text-transform:uppercase;color:${C.red};margin-bottom:8px">${esc_(l.who)} – ${esc_(names[l.who] || '')}</div>
+      <img src="data:${esc_(l.mime || 'image/jpeg')};base64,${l.data}" style="max-width:100%;max-height:420px;border:1px solid ${C.line};border-radius:8px">
+    </div>`).join('');
+  return `<div style="max-width:620px;margin:0 auto">
+  <div style="font:600 20px ${serif};color:${C.ink}">${esc_(SETTINGS.agent)}</div>
+  <div style="font:600 10px ${font};letter-spacing:2px;text-transform:uppercase;color:${C.muted};margin-top:3px">${esc_(SETTINGS.office)}</div>
+  <div style="font:700 11px ${font};letter-spacing:2px;text-transform:uppercase;color:${C.red};margin-top:24px">Buyer identification</div>
+  <div style="font:500 24px ${serif};color:${C.ink};margin:6px 0 2px">${esc_(street)}</div>
+  <div style="font:500 14px ${font};color:${C.muted}">${esc_(suburb)}</div>
+  ${imgs}
+  <div style="margin-top:22px;font:500 11px ${font};color:${C.muted}">Confidential. Collected to verify the buyer's identity for this offer. Don't forward to the seller.</div>
+</div>`;
+}
+
+function toPdf_(html, name) {
+  try {
+    return Utilities.newBlob('<html><body style="margin:24px">' + html + '</body></html>', 'text/html', 'doc.html')
+      .getAs('application/pdf').setName(name);
+  } catch (err) { console.warn('PDF failed: ' + name, err); return null; }
 }
 
 /* ---------- helpers ---------- */
